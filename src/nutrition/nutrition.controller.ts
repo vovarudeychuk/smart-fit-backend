@@ -7,6 +7,8 @@ import {
   Body,
   Param,
   Query,
+  ParseIntPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { NutritionService } from './nutrition.service';
 import { FoodItem } from '../models/food-item.entity';
@@ -67,32 +69,59 @@ export class NutritionController {
     return this.nutritionService.getDailyNutrition(+dayIndex);
   }
 
-  @Post('daily/:dayIndex/food')
+  @Post('day/:dayIndex/foods')
   addFoodToDay(
-    @Param('dayIndex') dayIndex: string,
+    @Param('dayIndex', ParseIntPipe) dayIndex: number,
     @Body() foodItem: FoodItem,
   ) {
-    return this.nutritionService.addFoodItem(+dayIndex, foodItem);
+    return this.nutritionService.addFoodItem(dayIndex, foodItem);
   }
 
-  @Put('daily/:dayIndex/food/:foodId')
+  @Put('day/:dayIndex/foods/:foodId')
   updateFoodInDay(
-    @Param('dayIndex') dayIndex: string,
-    @Param('foodId') foodId: string,
+    @Param('dayIndex', ParseIntPipe) dayIndex: number,
+    @Param('foodId', ParseIntPipe) foodId: number,
     @Body() updatedFood: FoodItem,
   ) {
-    return this.nutritionService.updateFoodItem(
-      +dayIndex,
-      +foodId,
-      updatedFood,
-    );
+    return this.nutritionService.updateFoodItem(dayIndex, foodId, updatedFood);
   }
 
-  @Delete('daily/:dayIndex/food/:foodId')
+  @Delete('day/:dayIndex/foods/:foodId')
   deleteFoodFromDay(
-    @Param('dayIndex') dayIndex: string,
-    @Param('foodId') foodId: string,
+    @Param('dayIndex', ParseIntPipe) dayIndex: number,
+    @Param('foodId', ParseIntPipe) foodId: number,
   ) {
-    return this.nutritionService.deleteFoodItem(+dayIndex, +foodId);
+    return this.nutritionService.deleteFoodItem(dayIndex, foodId);
+  }
+
+  @Post('move-food')
+  moveFoodBetweenDays(
+    @Body()
+    moveData: {
+      sourceDayIndex: number;
+      targetDayIndex: number;
+      foodItemId: number;
+    },
+  ) {
+    const { sourceDayIndex, targetDayIndex, foodItemId } = moveData;
+    // Get the food from source day
+    const sourceDay = this.nutritionService.getDailyNutrition(sourceDayIndex);
+    const foodToMove = sourceDay.foodItems.find(
+      (food) => food.id === foodItemId,
+    );
+
+    if (!foodToMove) {
+      throw new NotFoundException('Food item not found');
+    }
+    // Delete from source
+    this.nutritionService.deleteFoodItem(sourceDayIndex, foodItemId);
+    // Add to target
+    this.nutritionService.addFoodItem(targetDayIndex, foodToMove);
+    return { success: true };
+  }
+
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok' };
   }
 }
