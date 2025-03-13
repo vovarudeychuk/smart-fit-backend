@@ -482,7 +482,7 @@ export class NutritionService {
   // Add a new food item to the database
   addFoodToDatabase(newFood: FoodItem): FoodItem {
     if (!newFood.id) {
-      const maxId = Math.max(...this.foodDatabase.map(f => f.id || 0), 0);
+      const maxId = Math.max(...this.foodDatabase.map((f) => f.id || 0), 0);
       newFood.id = maxId + 1;
     }
     this.foodDatabase.push(newFood);
@@ -491,7 +491,7 @@ export class NutritionService {
 
   // Update a food in the database
   updateFoodInDatabase(id: number, updatedFood: FoodItem): FoodItem {
-    const index = this.foodDatabase.findIndex(f => f.id === id);
+    const index = this.foodDatabase.findIndex((f) => f.id === id);
     if (index === -1) {
       throw new Error(`Food with ID ${id} not found`);
     }
@@ -502,7 +502,7 @@ export class NutritionService {
 
   // Delete a food from the database
   deleteFoodFromDatabase(id: number): void {
-    this.foodDatabase = this.foodDatabase.filter(f => f.id !== id);
+    this.foodDatabase = this.foodDatabase.filter((f) => f.id !== id);
   }
 
   // Get nutrition for a specific day

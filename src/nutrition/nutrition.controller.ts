@@ -8,7 +8,6 @@ import {
   Param,
   Query,
   ParseIntPipe,
-  NotFoundException,
 } from '@nestjs/common';
 import { NutritionService } from './nutrition.service';
 import { FoodItem } from '../models/food-item.entity';
@@ -56,12 +55,16 @@ export class NutritionController {
 
   @Get('weekly')
   getWeeklyNutrition(@Query('weekStartDate') weekStartDate?: string) {
-    console.log(`[API] Getting nutrition for week starting: ${weekStartDate || 'current'}`);
-    
+    console.log(
+      `[API] Getting nutrition for week starting: ${weekStartDate || 'current'}`,
+    );
+
     if (weekStartDate) {
-      return this.nutritionService.getWeeklyNutritionForDate(new Date(weekStartDate));
+      return this.nutritionService.getWeeklyNutritionForDate(
+        new Date(weekStartDate),
+      );
     }
-    
+
     return this.nutritionService.getWeeklyNutrition();
   }
 
@@ -79,18 +82,18 @@ export class NutritionController {
   addFoodToDay(
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
     @Body() foodItem: FoodItem,
-    @Query('weekStartDate') weekStartDate?: string
+    @Query('weekStartDate') weekStartDate?: string,
   ) {
     console.log(`[API] Adding food to day ${dayIndex}:`, foodItem);
-    
+
     if (weekStartDate) {
       return this.nutritionService.addFoodItemForWeek(
         new Date(weekStartDate),
         dayIndex,
-        foodItem
+        foodItem,
       );
     }
-    
+
     return this.nutritionService.addFoodItem(dayIndex, foodItem);
   }
 
@@ -99,18 +102,21 @@ export class NutritionController {
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
     @Param('foodItemId', ParseIntPipe) foodItemId: number,
     @Body() foodItem: FoodItem,
-    @Query('weekStartDate') weekStartDate?: string
+    @Query('weekStartDate') weekStartDate?: string,
   ) {
-    console.log(`[API] Updating food ${foodItemId} on day ${dayIndex}:`, foodItem);
-    
+    console.log(
+      `[API] Updating food ${foodItemId} on day ${dayIndex}:`,
+      foodItem,
+    );
+
     if (weekStartDate) {
       return this.nutritionService.updateFoodItemForWeek(
         new Date(weekStartDate),
         dayIndex,
-        foodItem
+        foodItem,
       );
     }
-    
+
     return this.nutritionService.updateFoodItem(dayIndex, foodItem);
   }
 
@@ -118,41 +124,48 @@ export class NutritionController {
   removeFoodItem(
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
     @Param('foodItemId', ParseIntPipe) foodItemId: number,
-    @Query('weekStartDate') weekStartDate?: string
+    @Query('weekStartDate') weekStartDate?: string,
   ) {
     console.log(`[API] Removing food ${foodItemId} from day ${dayIndex}`);
-    
+
     if (weekStartDate) {
       return this.nutritionService.removeFoodItemForWeek(
         new Date(weekStartDate),
         dayIndex,
-        foodItemId
+        foodItemId,
       );
     }
-    
+
     return this.nutritionService.removeFoodItem(dayIndex, foodItemId);
   }
 
   @Post('move-food')
   moveFoodBetweenDays(
-    @Body() moveData: { sourceDayIndex: number; targetDayIndex: number; foodItemId: number },
-    @Query('weekStartDate') weekStartDate?: string
+    @Body()
+    moveData: {
+      sourceDayIndex: number;
+      targetDayIndex: number;
+      foodItemId: number;
+    },
+    @Query('weekStartDate') weekStartDate?: string,
   ) {
-    console.log(`[API] Moving food ${moveData.foodItemId} from day ${moveData.sourceDayIndex} to day ${moveData.targetDayIndex}`);
-    
+    console.log(
+      `[API] Moving food ${moveData.foodItemId} from day ${moveData.sourceDayIndex} to day ${moveData.targetDayIndex}`,
+    );
+
     if (weekStartDate) {
       return this.nutritionService.moveFoodBetweenDaysForWeek(
         new Date(weekStartDate),
         moveData.sourceDayIndex,
         moveData.targetDayIndex,
-        moveData.foodItemId
+        moveData.foodItemId,
       );
     }
-    
+
     return this.nutritionService.moveFoodBetweenDays(
       moveData.sourceDayIndex,
       moveData.targetDayIndex,
-      moveData.foodItemId
+      moveData.foodItemId,
     );
   }
 
