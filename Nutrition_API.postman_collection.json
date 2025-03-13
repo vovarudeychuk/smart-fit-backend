@@ -91,37 +91,16 @@
       ]
     },
     {
-      "name": "Nutrition Goals",
+      "name": "Health",
       "item": [
         {
-          "name": "Get Nutrition Goals",
+          "name": "Health Check",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/goals",
+              "raw": "{{baseUrl}}/nutrition/health",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "goals"]
-            }
-          }
-        },
-        {
-          "name": "Update Nutrition Goals",
-          "request": {
-            "method": "PUT",
-            "url": {
-              "raw": "{{baseUrl}}/nutrition/goals",
-              "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "goals"]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"calorieGoal\": 2200,\n  \"proteinGoal\": 160,\n  \"carbsGoal\": 220,\n  \"fatGoal\": 70\n}"
+              "path": ["nutrition", "health"]
             }
           }
         }
@@ -146,9 +125,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/daily/0",
+              "raw": "{{baseUrl}}/nutrition/day/0",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "daily", "0"]
+              "path": ["nutrition", "day", "0"]
             }
           }
         },
@@ -157,9 +136,9 @@
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/daily/0/food",
+              "raw": "{{baseUrl}}/nutrition/day/0/foods",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "daily", "0", "food"]
+              "path": ["nutrition", "day", "0", "foods"]
             },
             "header": [
               {
@@ -178,9 +157,9 @@
           "request": {
             "method": "PUT",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/daily/0/food/4",
+              "raw": "{{baseUrl}}/nutrition/day/0/foods/4",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "daily", "0", "food", "4"]
+              "path": ["nutrition", "day", "0", "foods", "4"]
             },
             "header": [
               {
@@ -199,9 +178,30 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/daily/0/food/4",
+              "raw": "{{baseUrl}}/nutrition/day/0/foods/4",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "daily", "0", "food", "4"]
+              "path": ["nutrition", "day", "0", "foods", "4"]
+            }
+          }
+        },
+        {
+          "name": "Move Food Between Days",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/nutrition/move-food",
+              "host": ["{{baseUrl}}"],
+              "path": ["nutrition", "move-food"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceDayIndex\": 0,\n  \"targetDayIndex\": 2,\n  \"foodItemId\": 4\n}"
             }
           }
         }

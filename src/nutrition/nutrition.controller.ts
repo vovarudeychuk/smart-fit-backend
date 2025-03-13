@@ -55,7 +55,16 @@ export class NutritionController {
   }
 
   @Get('weekly')
-  getWeeklyNutrition() {
+  getWeeklyNutrition(@Query('weekStartDate') weekStartDate?: string) {
+    if (weekStartDate) {
+      console.log(
+        `[API] Getting nutrition for week starting: ${weekStartDate}`,
+      );
+      return this.nutritionService.getWeeklyNutritionForDate(
+        new Date(weekStartDate),
+      );
+    }
+    console.log('[API] Getting nutrition for current week');
     return this.nutritionService.getWeeklyNutrition();
   }
 
@@ -73,7 +82,16 @@ export class NutritionController {
   addFoodToDay(
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
     @Body() foodItem: FoodItem,
+    @Query('weekStartDate') weekStartDate?: string,
   ) {
+    console.log(`[API] Adding food to day ${dayIndex}:`, foodItem);
+    if (weekStartDate) {
+      return this.nutritionService.addFoodItemForWeek(
+        new Date(weekStartDate),
+        dayIndex,
+        foodItem,
+      );
+    }
     return this.nutritionService.addFoodItem(dayIndex, foodItem);
   }
 
@@ -122,6 +140,6 @@ export class NutritionController {
 
   @Get('health')
   healthCheck() {
-    return { status: 'ok' };
+    return { status: 'OK', timestamp: new Date().toISOString() };
   }
 }

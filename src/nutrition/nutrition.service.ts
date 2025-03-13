@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { FoodItem } from '../models/food-item.entity';
 import { DailyNutrition } from '../models/daily-nutrition.entity';
 import { NutritionGoals } from '../models/nutrition-goals.entity';
+import { startOfWeek, addDays, isSameWeek } from 'date-fns';
 
 @Injectable()
 export class NutritionService {
@@ -109,6 +110,12 @@ export class NutritionService {
 
   // Weekly nutrition data
   private weeklyNutrition: DailyNutrition[] = [];
+
+  // Add this to your class properties to store data for multiple weeks
+  private weeklyNutritionByDate: Array<{
+    weekStartDate: string;
+    data: DailyNutrition[];
+  }> = [];
 
   constructor() {
     this.initializeWeeklyNutrition();
@@ -319,5 +326,137 @@ export class NutritionService {
     }
 
     return dayData;
+  }
+
+  getWeeklyNutritionForDate(date: Date): DailyNutrition[] {
+    // If we have data for this week in storage, return it
+    const existingData = this.weeklyNutritionByDate.find((entry) =>
+      isSameWeek(new Date(entry.weekStartDate), date),
+    );
+
+    if (existingData) {
+      return existingData.data;
+    }
+
+    // Otherwise, generate empty data for that week
+    const weekStartDate = startOfWeek(date);
+    const weekData = Array(7)
+      .fill(null)
+      .map((_, index) => {
+        const currentDay = addDays(weekStartDate, index);
+        return {
+          date: currentDay,
+          foodItems: [],
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+        };
+      });
+
+    // Store this data for future requests
+    this.weeklyNutritionByDate.push({
+      weekStartDate: weekStartDate.toISOString(),
+      data: weekData,
+    });
+
+    return weekData;
+  }
+
+  // Helper method to generate dates for a specific week
+  private generateWeekDatesForDate(date: Date): Date[] {
+    const dates: Date[] = [];
+    const dayOfWeek = date.getDay();
+    // Generate dates for Sun-Sat containing the provided date
+    for (let i = 0; i < 7; i++) {
+      const weekDate = new Date(date);
+      weekDate.setDate(date.getDate() - dayOfWeek + i);
+      dates.push(weekDate);
+    }
+
+    return dates;
+  }
+
+  // Add this method to generate nutrition data for a set of dates
+  private generateNutritionDataForDates(dates: Date[]): DailyNutrition[] {
+    return dates.map((date) => {
+      // Check if we already have data for this date
+      const existingData = this.weeklyNutrition.find(
+        (day) => day.date.toDateString() === date.toDateString(),
+      );
+
+      if (existingData) {
+        return existingData;
+      }
+
+      // Generate new data if none exists
+      const randomFoodItems = this.getRandomFoodItems(
+        Math.floor(Math.random() * 3) + 1,
+      );
+
+      // Calculate totals
+      const totalCalories = randomFoodItems.reduce(
+        (sum, item) => sum + item.calories,
+        0,
+      );
+      const totalProtein = randomFoodItems.reduce(
+        (sum, item) => sum + item.protein,
+        0,
+      );
+      const totalCarbs = randomFoodItems.reduce(
+        (sum, item) => sum + item.carbs,
+        0,
+      );
+      const totalFat = randomFoodItems.reduce((sum, item) => sum + item.fat, 0);
+      return {
+        date,
+        foodItems: randomFoodItems,
+        totalCalories,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+      };
+    });
+  }
+
+  // Add this method to handle adding food items to a specific week
+  addFoodItemForWeek(
+    weekStartDate: Date,
+    dayIndex: number,
+    foodItem: FoodItem,
+  ): DailyNutrition {
+    // Get the weekly data for the specified week
+    const weekData = this.getWeeklyNutritionForDate(weekStartDate);
+    // Ensure valid dayIndex
+    if (dayIndex < 0 || dayIndex >= weekData.length) {
+      throw new Error('Day index out of range');
+    }
+    // Add the food item to the specified day
+    const day = weekData[dayIndex];
+    // Generate new ID if needed
+    if (!foodItem.id) {
+      const maxId = Math.max(...day.foodItems.map((item) => item.id || 0), 0);
+      foodItem.id = maxId + 1;
+    }
+    // Add to day's food items
+    day.foodItems.push(foodItem);
+    // Recalculate totals
+    this.calculateDayTotals(day);
+    // Update storage with modified week data
+    this.updateWeekStorage(weekStartDate, weekData);
+    return day;
+  }
+  // Helper to update week storage
+  private updateWeekStorage(
+    weekStartDate: Date,
+    weekData: DailyNutrition[],
+  ): void {
+    const existingIndex = this.weeklyNutritionByDate.findIndex((entry) =>
+      isSameWeek(new Date(entry.weekStartDate), weekStartDate),
+    );
+
+    if (existingIndex >= 0) {
+      this.weeklyNutritionByDate[existingIndex].data = weekData;
+    }
   }
 }
