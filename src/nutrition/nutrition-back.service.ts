@@ -152,8 +152,8 @@ export class NutritionService {
     const weekData: DailyNutrition[] = Array(7)
       .fill(null)
       .map((_, index) => {
-        const currentDay = addDays(weekStartDate, index);
-
+        const currentDay = addDays(new Date(weekStartDate), index);
+        console.log(`Day ${index}: ${format(currentDay, 'EEE MMM dd yyyy')}`);
         // For demonstration, we'll add more food items to weekdays than weekends
         const isWeekend =
           currentDay.getDay() === 0 || currentDay.getDay() === 6;

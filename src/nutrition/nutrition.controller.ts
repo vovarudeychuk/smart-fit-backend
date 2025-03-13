@@ -9,9 +9,10 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { NutritionService } from './nutrition.service';
+import { NutritionService } from './nutrition-back.service';
 import { FoodItem } from '../models/food-item.entity';
 import { NutritionGoals } from '../models/nutrition-goals.entity';
+import { DailyNutrition } from '../models/daily-nutrition.model';
 
 @Controller('nutrition')
 export class NutritionController {
@@ -59,13 +60,30 @@ export class NutritionController {
       `[API] Getting nutrition for week starting: ${weekStartDate || 'current'}`,
     );
 
+    let weekData: DailyNutrition[];
     if (weekStartDate) {
-      return this.nutritionService.getWeeklyNutritionForDate(
+      weekData = this.nutritionService.getWeeklyNutritionForDate(
         new Date(weekStartDate),
       );
+    } else {
+      weekData = this.nutritionService.getWeeklyNutrition();
     }
 
-    return this.nutritionService.getWeeklyNutrition();
+    // Get today's day index using the Sunday-based system (Sunday=0, Monday=1, etc.)
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    // Wednesday should be 3 (assuming the desired indexing is: Sunday=0, Monday=1, etc.)
+    // This matches JavaScript's native getDay() system
+    const dayIndex = dayOfWeek;
+
+    console.log(
+      `Today is ${today.toDateString()}, dayOfWeek=${dayOfWeek}, returning dayIndex=${dayIndex}`,
+    );
+
+    return {
+      weekData,
+      currentDayIndex: dayIndex,
+    };
   }
 
   @Get('daily')
