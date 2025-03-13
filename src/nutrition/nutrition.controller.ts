@@ -56,15 +56,12 @@ export class NutritionController {
 
   @Get('weekly')
   getWeeklyNutrition(@Query('weekStartDate') weekStartDate?: string) {
+    console.log(`[API] Getting nutrition for week starting: ${weekStartDate || 'current'}`);
+    
     if (weekStartDate) {
-      console.log(
-        `[API] Getting nutrition for week starting: ${weekStartDate}`,
-      );
-      return this.nutritionService.getWeeklyNutritionForDate(
-        new Date(weekStartDate),
-      );
+      return this.nutritionService.getWeeklyNutritionForDate(new Date(weekStartDate));
     }
-    console.log('[API] Getting nutrition for current week');
+    
     return this.nutritionService.getWeeklyNutrition();
   }
 
@@ -82,60 +79,81 @@ export class NutritionController {
   addFoodToDay(
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
     @Body() foodItem: FoodItem,
-    @Query('weekStartDate') weekStartDate?: string,
+    @Query('weekStartDate') weekStartDate?: string
   ) {
     console.log(`[API] Adding food to day ${dayIndex}:`, foodItem);
+    
     if (weekStartDate) {
       return this.nutritionService.addFoodItemForWeek(
         new Date(weekStartDate),
         dayIndex,
-        foodItem,
+        foodItem
       );
     }
+    
     return this.nutritionService.addFoodItem(dayIndex, foodItem);
   }
 
-  @Put('day/:dayIndex/foods/:foodId')
-  updateFoodInDay(
+  @Put('day/:dayIndex/foods/:foodItemId')
+  updateFoodItem(
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
-    @Param('foodId', ParseIntPipe) foodId: number,
-    @Body() updatedFood: FoodItem,
+    @Param('foodItemId', ParseIntPipe) foodItemId: number,
+    @Body() foodItem: FoodItem,
+    @Query('weekStartDate') weekStartDate?: string
   ) {
-    return this.nutritionService.updateFoodItem(dayIndex, foodId, updatedFood);
+    console.log(`[API] Updating food ${foodItemId} on day ${dayIndex}:`, foodItem);
+    
+    if (weekStartDate) {
+      return this.nutritionService.updateFoodItemForWeek(
+        new Date(weekStartDate),
+        dayIndex,
+        foodItem
+      );
+    }
+    
+    return this.nutritionService.updateFoodItem(dayIndex, foodItem);
   }
 
-  @Delete('day/:dayIndex/foods/:foodId')
-  deleteFoodFromDay(
+  @Delete('day/:dayIndex/foods/:foodItemId')
+  removeFoodItem(
     @Param('dayIndex', ParseIntPipe) dayIndex: number,
-    @Param('foodId', ParseIntPipe) foodId: number,
+    @Param('foodItemId', ParseIntPipe) foodItemId: number,
+    @Query('weekStartDate') weekStartDate?: string
   ) {
-    return this.nutritionService.deleteFoodItem(dayIndex, foodId);
+    console.log(`[API] Removing food ${foodItemId} from day ${dayIndex}`);
+    
+    if (weekStartDate) {
+      return this.nutritionService.removeFoodItemForWeek(
+        new Date(weekStartDate),
+        dayIndex,
+        foodItemId
+      );
+    }
+    
+    return this.nutritionService.removeFoodItem(dayIndex, foodItemId);
   }
 
   @Post('move-food')
   moveFoodBetweenDays(
-    @Body()
-    moveData: {
-      sourceDayIndex: number;
-      targetDayIndex: number;
-      foodItemId: number;
-    },
+    @Body() moveData: { sourceDayIndex: number; targetDayIndex: number; foodItemId: number },
+    @Query('weekStartDate') weekStartDate?: string
   ) {
-    const { sourceDayIndex, targetDayIndex, foodItemId } = moveData;
-    // Get the food from source day
-    const sourceDay = this.nutritionService.getDailyNutrition(sourceDayIndex);
-    const foodToMove = sourceDay.foodItems.find(
-      (food) => food.id === foodItemId,
-    );
-
-    if (!foodToMove) {
-      throw new NotFoundException('Food item not found');
+    console.log(`[API] Moving food ${moveData.foodItemId} from day ${moveData.sourceDayIndex} to day ${moveData.targetDayIndex}`);
+    
+    if (weekStartDate) {
+      return this.nutritionService.moveFoodBetweenDaysForWeek(
+        new Date(weekStartDate),
+        moveData.sourceDayIndex,
+        moveData.targetDayIndex,
+        moveData.foodItemId
+      );
     }
-    // Delete from source
-    this.nutritionService.deleteFoodItem(sourceDayIndex, foodItemId);
-    // Add to target
-    this.nutritionService.addFoodItem(targetDayIndex, foodToMove);
-    return { success: true };
+    
+    return this.nutritionService.moveFoodBetweenDays(
+      moveData.sourceDayIndex,
+      moveData.targetDayIndex,
+      moveData.foodItemId
+    );
   }
 
   @Get('health')
