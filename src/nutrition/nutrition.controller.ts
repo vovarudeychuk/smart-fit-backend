@@ -16,6 +16,11 @@ import { NutritionGoals } from '../models/nutrition-goals.entity';
 export class NutritionController {
   constructor(private readonly nutritionService: NutritionService) {}
 
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
+
   @Get('foods')
   getAllFoods() {
     return this.nutritionService.getAllFoods();
@@ -67,7 +72,7 @@ export class NutritionController {
     return this.nutritionService.getDailyNutrition(+dayIndex);
   }
 
-  @Post('daily/:dayIndex/food')
+  @Post('day/:dayIndex/foods')
   addFoodToDay(
     @Param('dayIndex') dayIndex: string,
     @Body() foodItem: FoodItem,
@@ -75,7 +80,7 @@ export class NutritionController {
     return this.nutritionService.addFoodItem(+dayIndex, foodItem);
   }
 
-  @Put('daily/:dayIndex/food/:foodId')
+  @Put('day/:dayIndex/foods/:foodId')
   updateFoodInDay(
     @Param('dayIndex') dayIndex: string,
     @Param('foodId') foodId: string,
@@ -88,11 +93,22 @@ export class NutritionController {
     );
   }
 
-  @Delete('daily/:dayIndex/food/:foodId')
+  @Delete('day/:dayIndex/foods/:foodId')
   deleteFoodFromDay(
     @Param('dayIndex') dayIndex: string,
     @Param('foodId') foodId: string,
   ) {
     return this.nutritionService.deleteFoodItem(+dayIndex, +foodId);
+  }
+
+  @Post('move-food')
+  moveFoodBetweenDays(
+    @Body() moveData: { sourceDayIndex: number; targetDayIndex: number; foodItemId: number },
+  ) {
+    return this.nutritionService.moveFoodBetweenDays(
+      moveData.sourceDayIndex,
+      moveData.targetDayIndex,
+      moveData.foodItemId,
+    );
   }
 }

@@ -320,4 +320,41 @@ export class NutritionService {
 
     return dayData;
   }
+
+  moveFoodBetweenDays(
+    sourceDayIndex: number,
+    targetDayIndex: number,
+    foodItemId: number,
+  ): { sourceDay: DailyNutrition; targetDay: DailyNutrition } {
+    if (
+      sourceDayIndex < 0 || 
+      sourceDayIndex >= 7 || 
+      targetDayIndex < 0 || 
+      targetDayIndex >= 7
+    ) {
+      throw new Error('Day index out of range');
+    }
+
+    const sourceDay = this.weeklyNutrition[sourceDayIndex];
+    const targetDay = this.weeklyNutrition[targetDayIndex];
+
+    // Find the food item in the source day
+    const foodItemIndex = sourceDay.foodItems.findIndex(item => item.id === foodItemId);
+    if (foodItemIndex === -1) {
+      throw new Error('Food item not found in source day');
+    }
+
+    // Get a copy of the food item
+    const foodItem = { ...sourceDay.foodItems[foodItemIndex] };
+
+    // Remove from source day
+    sourceDay.foodItems = sourceDay.foodItems.filter(item => item.id !== foodItemId);
+    this.calculateDayTotals(sourceDay);
+
+    // Add to target day
+    targetDay.foodItems.push(foodItem);
+    this.calculateDayTotals(targetDay);
+
+    return { sourceDay, targetDay };
+  }
 }
