@@ -114,9 +114,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/weekly",
+              "raw": "{{baseUrl}}/nutrition/weekly?weekStartDate={{weekStartDate}}",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "weekly"]
+              "path": ["nutrition", "weekly"],
+              "query": [
+                {
+                  "key": "weekStartDate",
+                  "value": "{{weekStartDate}}"
+                }
+              ]
             }
           }
         },
@@ -125,9 +131,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/day/0",
+              "raw": "{{baseUrl}}/nutrition/day/0?weekStartDate={{weekStartDate}}",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "day", "0"]
+              "path": ["nutrition", "day", "0"],
+              "query": [
+                {
+                  "key": "weekStartDate",
+                  "value": "{{weekStartDate}}"
+                }
+              ]
             }
           }
         },
@@ -136,9 +148,15 @@
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/day/0/foods",
+              "raw": "{{baseUrl}}/nutrition/day/0/foods?weekStartDate={{weekStartDate}}",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "day", "0", "foods"]
+              "path": ["nutrition", "day", "0", "foods"],
+              "query": [
+                {
+                  "key": "weekStartDate",
+                  "value": "{{weekStartDate}}"
+                }
+              ]
             },
             "header": [
               {
@@ -148,7 +166,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": 4,\n  \"name\": \"Salmon\",\n  \"calories\": 208,\n  \"protein\": 20,\n  \"carbs\": 0,\n  \"fat\": 13,\n  \"servingSize\": \"100g\"\n}"
+              "raw": "{\n  \"name\": \"Salmon\",\n  \"calories\": 208,\n  \"protein\": 20,\n  \"carbs\": 0,\n  \"fat\": 13,\n  \"servingSize\": \"100g\"\n}"
             }
           }
         },
@@ -157,9 +175,15 @@
           "request": {
             "method": "PUT",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/day/0/foods/4",
+              "raw": "{{baseUrl}}/nutrition/day/1/foods/{{foodId}}?weekStartDate={{weekStartDate}}",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "day", "0", "foods", "4"]
+              "path": ["nutrition", "day", "1", "foods", "{{foodId}}"],
+              "query": [
+                {
+                  "key": "weekStartDate",
+                  "value": "{{weekStartDate}}"
+                }
+              ]
             },
             "header": [
               {
@@ -169,7 +193,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": 4,\n  \"name\": \"Salmon\",\n  \"calories\": 250,\n  \"protein\": 25,\n  \"carbs\": 0,\n  \"fat\": 15,\n  \"servingSize\": \"120g\"\n}"
+              "raw": "{\n  \"name\": \"Salmon\",\n  \"calories\": 250,\n  \"protein\": 25,\n  \"carbs\": 0,\n  \"fat\": 15,\n  \"servingSize\": \"120g\"\n}"
             }
           }
         },
@@ -178,9 +202,15 @@
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/day/0/foods/4",
+              "raw": "{{baseUrl}}/nutrition/day/0/foods/{{foodId}}?weekStartDate={{weekStartDate}}",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "day", "0", "foods", "4"]
+              "path": ["nutrition", "day", "0", "foods", "{{foodId}}"],
+              "query": [
+                {
+                  "key": "weekStartDate",
+                  "value": "{{weekStartDate}}"
+                }
+              ]
             }
           }
         },
@@ -189,9 +219,15 @@
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/nutrition/move-food",
+              "raw": "{{baseUrl}}/nutrition/move-food?weekStartDate={{weekStartDate}}",
               "host": ["{{baseUrl}}"],
-              "path": ["nutrition", "move-food"]
+              "path": ["nutrition", "move-food"],
+              "query": [
+                {
+                  "key": "weekStartDate",
+                  "value": "{{weekStartDate}}"
+                }
+              ]
             },
             "header": [
               {
@@ -201,7 +237,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sourceDayIndex\": 0,\n  \"targetDayIndex\": 2,\n  \"foodItemId\": 4\n}"
+              "raw": "{\n  \"sourceDayIndex\": 0,\n  \"targetDayIndex\": 2,\n  \"foodItemId\": \"{{foodId}}\"\n}"
             }
           }
         }
@@ -212,6 +248,16 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "weekStartDate",
+      "value": "2025-02-16",
+      "type": "string"
+    },
+    {
+      "key": "foodId",
+      "value": "67e58f8e2c88b4661ff73a44",
       "type": "string"
     }
   ]

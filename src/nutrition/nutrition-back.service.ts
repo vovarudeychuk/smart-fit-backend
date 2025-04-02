@@ -1,529 +1,467 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { FoodItem } from '../models/food-item.entity';
-import { DailyNutrition } from '../models/daily-nutrition.entity';
+import { DailyNutrition } from '../models/daily-nutrition.model';
 import { NutritionGoals } from '../models/nutrition-goals.entity';
 import { startOfWeek, addDays, subWeeks, addWeeks, format } from 'date-fns';
 
 @Injectable()
 export class NutritionService {
-  // User goals
-  private nutritionGoals: NutritionGoals = {
-    calorieGoal: 2000,
-    proteinGoal: 150,
-    carbsGoal: 200,
-    fatGoal: 65,
-  };
-
-  // Food database
-  private foodDatabase: FoodItem[] = [
-    {
-      id: 1,
-      name: 'Chicken Breast',
-      calories: 165,
-      protein: 31,
-      carbs: 0,
-      fat: 3.6,
-      servingSize: '100g',
-    },
-    {
-      id: 2,
-      name: 'Brown Rice',
-      calories: 112,
-      protein: 2.6,
-      carbs: 23.5,
-      fat: 0.9,
-      servingSize: '100g',
-    },
-    {
-      id: 3,
-      name: 'Broccoli',
-      calories: 34,
-      protein: 2.8,
-      carbs: 6.6,
-      fat: 0.4,
-      servingSize: '100g',
-    },
-    {
-      id: 4,
-      name: 'Salmon',
-      calories: 208,
-      protein: 20,
-      carbs: 0,
-      fat: 13,
-      servingSize: '100g',
-    },
-    {
-      id: 5,
-      name: 'Sweet Potato',
-      calories: 86,
-      protein: 1.6,
-      carbs: 20,
-      fat: 0.1,
-      servingSize: '100g',
-    },
-    {
-      id: 6,
-      name: 'Avocado',
-      calories: 160,
-      protein: 2,
-      carbs: 8.5,
-      fat: 14.7,
-      servingSize: '100g',
-    },
-    {
-      id: 7,
-      name: 'Egg',
-      calories: 78,
-      protein: 6.3,
-      carbs: 0.6,
-      fat: 5.3,
-      servingSize: '1 large',
-    },
-    {
-      id: 8,
-      name: 'Greek Yogurt',
-      calories: 59,
-      protein: 10,
-      carbs: 3.6,
-      fat: 0.4,
-      servingSize: '100g',
-    },
-    {
-      id: 9,
-      name: 'Almonds',
-      calories: 579,
-      protein: 21,
-      carbs: 21.6,
-      fat: 49.9,
-      servingSize: '100g',
-    },
-    {
-      id: 10,
-      name: 'Banana',
-      calories: 89,
-      protein: 1.1,
-      carbs: 22.8,
-      fat: 0.3,
-      servingSize: '100g',
-    },
-  ];
-
-  // Storage for multiple weeks of nutrition data
-  private weeklyNutritionByDate: Map<string, DailyNutrition[]> = new Map();
-
-  constructor() {
-    // Initialize with mock data for previous, current, and next week
-    this.initializeMultiWeekData();
+  constructor(
+    @InjectModel(FoodItem.name) private readonly foodItemModel: Model<FoodItem>,
+    @InjectModel(DailyNutrition.name) private readonly dailyNutritionModel: Model<DailyNutrition>,
+    @InjectModel(NutritionGoals.name) private readonly nutritionGoalsModel: Model<NutritionGoals>
+  ) {
+    // Initialize database with sample data if empty
+    this.initializeDatabase();
   }
 
-  // Initialize mock data for 3 weeks (previous, current, next)
-  private initializeMultiWeekData(): void {
-    const today = new Date();
-
-    // Generate data for previous week
-    const previousWeekStart = startOfWeek(subWeeks(today, 1));
-    this.generateAndStoreWeekData(previousWeekStart, true);
-
-    // Generate data for current week
-    const currentWeekStart = startOfWeek(today);
-    this.generateAndStoreWeekData(currentWeekStart, true);
-
-    // Generate data for next week
-    const nextWeekStart = startOfWeek(addWeeks(today, 1));
-    this.generateAndStoreWeekData(nextWeekStart, false); // less food for future week
-
-    console.log(
-      `Mock data initialized for 3 weeks. Available weeks: ${[...this.weeklyNutritionByDate.keys()].join(', ')}`,
-    );
+  // Getter methods for models to be used by the controller
+  getFoodItemModel(): Model<FoodItem> {
+    return this.foodItemModel;
   }
 
-  // Generate mock data for a specific week and store it
-  private generateAndStoreWeekData(
-    weekStartDate: Date,
-    includeFood: boolean,
-  ): void {
-    const weekKey = format(weekStartDate, 'yyyy-MM-dd');
+  getDailyNutritionModel(): Model<DailyNutrition> {
+    return this.dailyNutritionModel;
+  }
 
-    // Skip if we already have data for this week
-    if (this.weeklyNutritionByDate.has(weekKey)) {
-      return;
+  getNutritionGoalsModel(): Model<NutritionGoals> {
+    return this.nutritionGoalsModel;
+  }
+
+  // Initialize database with sample data if empty
+  private async initializeDatabase(): Promise<void> {
+    try {
+      const foodCount = await this.foodItemModel.countDocuments().exec();
+      
+      if (foodCount === 0) {
+        // Sample food data to populate
+        const sampleFoods = [
+          {
+            name: 'Chicken Breast',
+            calories: 165,
+            protein: 31,
+            carbs: 0,
+            fat: 3.6,
+            servingSize: '100g',
+          },
+          {
+            name: 'Brown Rice',
+            calories: 112,
+            protein: 2.6,
+            carbs: 23.5,
+            fat: 0.9,
+            servingSize: '100g',
+          },
+          {
+            name: 'Broccoli',
+            calories: 34,
+            protein: 2.8,
+            carbs: 6.6,
+            fat: 0.4,
+            servingSize: '100g',
+          },
+          {
+            name: 'Salmon',
+            calories: 208,
+            protein: 20,
+            carbs: 0,
+            fat: 13,
+            servingSize: '100g',
+          },
+          {
+            name: 'Sweet Potato',
+            calories: 86,
+            protein: 1.6,
+            carbs: 20,
+            fat: 0.1,
+            servingSize: '100g',
+          },
+          {
+            name: 'Avocado',
+            calories: 160,
+            protein: 2,
+            carbs: 8.5,
+            fat: 14.7,
+            servingSize: '100g',
+          },
+          {
+            name: 'Egg',
+            calories: 78,
+            protein: 6.3,
+            carbs: 0.6,
+            fat: 5.3,
+            servingSize: '1 large',
+          },
+          {
+            name: 'Greek Yogurt',
+            calories: 59,
+            protein: 10,
+            carbs: 3.6,
+            fat: 0.4,
+            servingSize: '100g',
+          },
+          {
+            name: 'Almonds',
+            calories: 579,
+            protein: 21,
+            carbs: 21.6,
+            fat: 49.9,
+            servingSize: '100g',
+          },
+          {
+            name: 'Banana',
+            calories: 89,
+            protein: 1.1,
+            carbs: 22.8,
+            fat: 0.3,
+            servingSize: '100g',
+          },
+        ];
+
+        // Insert sample foods
+        await this.foodItemModel.insertMany(sampleFoods);
+        console.log('Sample food database initialized');
+      }
+    } catch (error) {
+      console.error('Error initializing database:', error);
     }
+  }
 
-    const weekData: DailyNutrition[] = Array(7)
-      .fill(null)
-      .map((_, index) => {
-        const currentDay = addDays(new Date(weekStartDate), index);
-        console.log(`Day ${index}: ${format(currentDay, 'EEE MMM dd yyyy')}`);
-        // For demonstration, we'll add more food items to weekdays than weekends
-        const isWeekend =
-          currentDay.getDay() === 0 || currentDay.getDay() === 6;
-        const maxItems = isWeekend ? 2 : 4;
+  // Get all food items from database
+  async getAllFoodItems(): Promise<FoodItem[]> {
+    return this.foodItemModel.find().exec();
+  }
 
-        // Only include food items if specified (for past/current weeks)
-        const foodItems = includeFood
-          ? this.getRandomFoodItems(Math.floor(Math.random() * maxItems) + 1)
-          : [];
+  // Add a new food item
+  async addFoodItem(foodItemData: any): Promise<FoodItem> {
+    const newFoodItem = new this.foodItemModel(foodItemData);
+    return newFoodItem.save();
+  }
 
-        // Calculate totals
-        const totalCalories = foodItems.reduce(
-          (sum, item) => sum + item.calories,
-          0,
-        );
-        const totalProtein = foodItems.reduce(
-          (sum, item) => sum + item.protein,
-          0,
-        );
-        const totalCarbs = foodItems.reduce((sum, item) => sum + item.carbs, 0);
-        const totalFat = foodItems.reduce((sum, item) => sum + item.fat, 0);
-
-        return {
-          date: currentDay,
-          foodItems,
-          totalCalories,
-          totalProtein,
-          totalCarbs,
-          totalFat,
-        };
+  // Get nutrition goals for a specific user
+  async getNutritionGoals(userId: string): Promise<NutritionGoals> {
+    let goals = await this.nutritionGoalsModel.findOne({ userId }).exec();
+    
+    if (!goals) {
+      // Create default goals if none exist
+      goals = new this.nutritionGoalsModel({
+        userId,
+        calorieGoal: 2000,
+        proteinGoal: 150,
+        carbsGoal: 200,
+        fatGoal: 65,
       });
-
-    // Store the week data
-    this.weeklyNutritionByDate.set(weekKey, weekData);
-  }
-
-  // Get weekly nutrition data for a specific date
-  getWeeklyNutritionForDate(date: Date): DailyNutrition[] {
-    const weekStartDate = startOfWeek(date);
-    const weekKey = format(weekStartDate, 'yyyy-MM-dd');
-
-    console.log(`Requesting nutrition data for week: ${weekKey}`);
-
-    // If we don't have data for this week yet, generate it
-    if (!this.weeklyNutritionByDate.has(weekKey)) {
-      // Check if this is a future week (generate empty) or past week (generate with food)
-      const today = new Date();
-      const isFutureWeek = weekStartDate > today;
-
-      this.generateAndStoreWeekData(weekStartDate, !isFutureWeek);
-      console.log(`Generated new mock data for week: ${weekKey}`);
+      await goals.save();
     }
-
-    return this.weeklyNutritionByDate.get(weekKey) || [];
+    
+    return goals;
   }
 
-  // Get the current week's nutrition data
-  getWeeklyNutrition(): DailyNutrition[] {
-    return this.getWeeklyNutritionForDate(new Date());
+  // Update nutrition goals for a user
+  async updateNutritionGoals(userId: string, goalsData: any): Promise<NutritionGoals> {
+    const goals = await this.nutritionGoalsModel.findOne({ userId }).exec();
+    
+    if (goals) {
+      goals.calorieGoal = goalsData.calorieGoal;
+      goals.proteinGoal = goalsData.proteinGoal;
+      goals.carbsGoal = goalsData.carbsGoal;
+      goals.fatGoal = goalsData.fatGoal;
+      return goals.save();
+    } else {
+      const newGoals = new this.nutritionGoalsModel({
+        userId,
+        ...goalsData,
+      });
+      return newGoals.save();
+    }
+  }
+
+  // Get weekly nutrition data for a user on a specific date
+  async getWeeklyNutritionForDate(userId: string, date: Date): Promise<DailyNutrition[]> {
+    try {
+      console.log(`Getting weekly nutrition for user ${userId} on date ${date}`);
+      const weekStartDate = startOfWeek(new Date(date));
+      const weekEndDate = addDays(new Date(weekStartDate), 6);
+      
+      console.log(`Week range: ${weekStartDate.toISOString()} to ${weekEndDate.toISOString()}`);
+      
+      // Find all nutrition entries for this user between start and end dates
+      const weeklyData = await this.dailyNutritionModel
+        .find({
+          userId,
+          date: {
+            $gte: weekStartDate,
+            $lte: weekEndDate,
+          },
+        })
+        .populate('foodItems')
+        .exec();
+      
+      console.log(`Found ${weeklyData.length} entries for the week`);
+      
+      // If we have data, return it
+      if (weeklyData.length > 0) {
+        return weeklyData;
+      }
+      
+      // No data for this week, create empty entries
+      const emptyWeek: DailyNutrition[] = [];
+      for (let i = 0; i < 7; i++) {
+        const currentDay = addDays(new Date(weekStartDate), i);
+        const dailyEntry = new this.dailyNutritionModel({
+          date: currentDay,
+          foodItems: [],
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          userId,
+        });
+        
+        // We don't save these empty records to DB, just return them
+        emptyWeek.push(dailyEntry);
+      }
+      
+      return emptyWeek;
+    } catch (error) {
+      console.error('Error getting weekly nutrition:', error);
+      throw error;
+    }
   }
 
   // Add a food item to a specific day
-  addFoodItem(dayIndex: number, foodItem: FoodItem): FoodItem {
-    // Use current week
-    return this.addFoodItemForWeek(new Date(), dayIndex, foodItem);
-  }
-
-  // Add a food item to a specific day in a specific week
-  addFoodItemForWeek(
-    weekDate: Date,
-    dayIndex: number,
-    foodItem: FoodItem,
-  ): FoodItem {
-    const weekStartDate = startOfWeek(weekDate);
-    const weekKey = format(weekStartDate, 'yyyy-MM-dd');
-
-    // Ensure we have data for this week
-    if (!this.weeklyNutritionByDate.has(weekKey)) {
-      this.getWeeklyNutritionForDate(weekDate);
+  async addFoodItemToDay(userId: string, date: Date, foodItemId: any): Promise<DailyNutrition> {
+    try {
+      // First find the food item - allow for either full object or ID
+      let foodItem;
+      
+      if (typeof foodItemId === 'object' && foodItemId._id) {
+        // If a full object with _id was passed
+        foodItem = await this.foodItemModel.findById(foodItemId._id).exec();
+      } else {
+        // Try to find by the ID string
+        foodItem = await this.foodItemModel.findById(foodItemId).exec();
+      }
+      
+      if (!foodItem) {
+        console.log('Food item not found with ID:', foodItemId);
+        throw new Error('Food item not found');
+      }
+      
+      console.log('Found food item:', foodItem);
+      
+      // Find or create daily nutrition for this date and user
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      let dailyNutrition = await this.dailyNutritionModel
+        .findOne({
+          userId,
+          date: {
+            $gte: startOfDay,
+            $lte: endOfDay,
+          },
+        })
+        .exec();
+      
+      if (!dailyNutrition) {
+        // Create new daily nutrition record
+        dailyNutrition = new this.dailyNutritionModel({
+          userId,
+          date,
+          foodItems: [],
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+        });
+      }
+      
+      // Add the food item to this day
+      dailyNutrition.foodItems.push(foodItem._id as any);
+      
+      // Use the updated food's nutrition values
+      dailyNutrition.totalCalories += foodItem.calories;
+      dailyNutrition.totalProtein += foodItem.protein;
+      dailyNutrition.totalCarbs += foodItem.carbs;
+      dailyNutrition.totalFat += foodItem.fat;
+      
+      // Save and return updated daily nutrition
+      return dailyNutrition.save();
+    } catch (error) {
+      console.error('Error adding food item:', error);
+      throw error;
     }
-
-    const weekData = this.weeklyNutritionByDate.get(weekKey);
-
-    if (!weekData || dayIndex < 0 || dayIndex >= weekData.length) {
-      throw new Error(`Invalid day index: ${dayIndex} for week: ${weekKey}`);
-    }
-
-    // Assign a unique ID to the food item if it doesn't have one
-    if (!foodItem.id) {
-      foodItem.id = Date.now();
-    }
-
-    // Add the food item and update totals
-    const day = weekData[dayIndex];
-    day.foodItems.push(foodItem);
-    day.totalCalories += foodItem.calories;
-    day.totalProtein += foodItem.protein;
-    day.totalCarbs += foodItem.carbs;
-    day.totalFat += foodItem.fat;
-
-    console.log(`Added ${foodItem.name} to day ${dayIndex} of week ${weekKey}`);
-
-    return foodItem;
   }
 
   // Remove a food item from a specific day
-  removeFoodItem(dayIndex: number, foodItemId: number): boolean {
-    // Use current week
-    return this.removeFoodItemForWeek(new Date(), dayIndex, foodItemId);
-  }
-
-  // Remove a food item from a specific day in a specific week
-  removeFoodItemForWeek(
-    weekDate: Date,
-    dayIndex: number,
-    foodItemId: number,
-  ): boolean {
-    const weekStartDate = startOfWeek(weekDate);
-    const weekKey = format(weekStartDate, 'yyyy-MM-dd');
-
-    if (!this.weeklyNutritionByDate.has(weekKey)) {
-      return false;
+  async removeFoodItemFromDay(userId: string, date: Date, foodItemId: string): Promise<DailyNutrition | any> {
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      console.log(`Looking for food item ${foodItemId} on ${date} for user ${userId}`);
+      
+      // Find the daily nutrition record
+      const dailyNutrition = await this.dailyNutritionModel
+        .findOne({
+          userId,
+          date: {
+            $gte: startOfDay,
+            $lte: endOfDay,
+          },
+        })
+        .populate('foodItems')
+        .exec();
+      
+      if (!dailyNutrition) {
+        console.log(`No nutrition data found for this day, nothing to delete`);
+        // Return success since the end result is the same - no food item exists
+        return { success: true, message: 'No nutrition data for this day' };
+      }
+      
+      console.log(`Found daily nutrition with ${dailyNutrition.foodItems.length} food items`);
+      
+      // Find the food item safely, without potentially throwing an error
+      let foodItemIndex = -1;
+      try {
+        foodItemIndex = dailyNutrition.foodItems.findIndex(
+          (item: any) => item && item._id && item._id.toString() === foodItemId
+        );
+      } catch (err) {
+        console.log(`Error finding food item: ${err.message}`);
+        // Continue with -1 index to indicate not found
+      }
+      
+      console.log(`Food item index: ${foodItemIndex}`);
+      
+      if (foodItemIndex === -1) {
+        console.log(`Food item ${foodItemId} not found in this day, nothing to delete`);
+        // Return success since the end result is the same - no food item exists
+        return { success: true, message: 'Food item not found in this day' };
+      }
+      
+      // Get the food item to update totals
+      const foodItem = dailyNutrition.foodItems[foodItemIndex];
+      
+      // Remove the food item
+      dailyNutrition.foodItems.splice(foodItemIndex, 1);
+      
+      // Update nutritional totals
+      dailyNutrition.totalCalories -= foodItem.calories || 0;
+      dailyNutrition.totalProtein -= foodItem.protein || 0;
+      dailyNutrition.totalCarbs -= foodItem.carbs || 0;
+      dailyNutrition.totalFat -= foodItem.fat || 0;
+      
+      // Save and return updated daily nutrition
+      return dailyNutrition.save();
+    } catch (error) {
+      console.error('Error removing food item:', error);
+      // Return a structured error response instead of throwing
+      return { success: false, message: error.message || 'Error removing food item' };
     }
+  }
 
-    const weekData = this.weeklyNutritionByDate.get(weekKey);
-
-    if (!weekData || dayIndex < 0 || dayIndex >= weekData.length) {
-      return false;
+  // Update a food item in a specific day
+  async updateFoodItemInDay(userId: string, date: Date, foodItemId: string, updatedFood: Partial<any>): Promise<DailyNutrition> {
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      // Find the daily nutrition record
+      let dailyNutrition = await this.dailyNutritionModel
+        .findOne({
+          userId,
+          date: {
+            $gte: startOfDay,
+            $lte: endOfDay,
+          },
+        })
+        .populate('foodItems')
+        .exec();
+      
+      if (!dailyNutrition) {
+        console.log(`No nutrition record found for date ${date}, creating a new one`);
+        
+        // Get the food item we're trying to update
+        const foodItem = await this.foodItemModel.findById(foodItemId).exec();
+        if (!foodItem) {
+          throw new Error('Food item not found');
+        }
+        
+        // Create new daily nutrition record with this food item
+        dailyNutrition = new this.dailyNutritionModel({
+          userId,
+          date,
+          foodItems: [foodItem._id],
+          totalCalories: updatedFood.calories || 0,
+          totalProtein: updatedFood.protein || 0,
+          totalCarbs: updatedFood.carbs || 0,
+          totalFat: updatedFood.fat || 0,
+        });
+        
+        // Save and return the new record
+        return dailyNutrition.save();
+      }
+      
+      // Find the food item
+      const foodItemIndex = dailyNutrition.foodItems.findIndex(
+        (item: any) => item._id.toString() === foodItemId
+      );
+      
+      if (foodItemIndex === -1) {
+        console.log(`Food item ${foodItemId} not found in day, adding it`);
+        
+        // Get the food item by ID
+        const foodItem = await this.foodItemModel.findById(foodItemId).exec();
+        if (!foodItem) {
+          throw new Error('Food item not found');
+        }
+        
+        // Add the food item to this day
+        dailyNutrition.foodItems.push(foodItem._id as any);
+        
+        // Use the updated food's nutrition values
+        dailyNutrition.totalCalories += updatedFood.calories || 0;
+        dailyNutrition.totalProtein += updatedFood.protein || 0;
+        dailyNutrition.totalCarbs += updatedFood.carbs || 0;
+        dailyNutrition.totalFat += updatedFood.fat || 0;
+      } else {
+        // Get the original food item to update totals
+        const originalFoodItem = dailyNutrition.foodItems[foodItemIndex];
+        
+        // Update nutritional totals (subtract original values)
+        dailyNutrition.totalCalories -= originalFoodItem.calories;
+        dailyNutrition.totalProtein -= originalFoodItem.protein;
+        dailyNutrition.totalCarbs -= originalFoodItem.carbs;
+        dailyNutrition.totalFat -= originalFoodItem.fat;
+        
+        // Update the food item properties
+        Object.assign(originalFoodItem, updatedFood);
+        
+        // Add the new nutritional values
+        dailyNutrition.totalCalories += originalFoodItem.calories;
+        dailyNutrition.totalProtein += originalFoodItem.protein;
+        dailyNutrition.totalCarbs += originalFoodItem.carbs;
+        dailyNutrition.totalFat += originalFoodItem.fat;
+      }
+      
+      // Save and return updated daily nutrition
+      return dailyNutrition.save();
+    } catch (error) {
+      console.error('Error updating food item:', error);
+      throw error;
     }
-
-    const day = weekData[dayIndex];
-    const foodIndex = day.foodItems.findIndex((item) => item.id === foodItemId);
-
-    if (foodIndex === -1) {
-      return false;
-    }
-
-    // Remove the food item and update totals
-    const foodItem = day.foodItems[foodIndex];
-    day.foodItems.splice(foodIndex, 1);
-    day.totalCalories -= foodItem.calories;
-    day.totalProtein -= foodItem.protein;
-    day.totalCarbs -= foodItem.carbs;
-    day.totalFat -= foodItem.fat;
-
-    console.log(
-      `Removed food item ${foodItemId} from day ${dayIndex} of week ${weekKey}`,
-    );
-
-    return true;
-  }
-
-  // Update an existing food item
-  updateFoodItem(dayIndex: number, foodItem: FoodItem): FoodItem {
-    // Use current week
-    return this.updateFoodItemForWeek(new Date(), dayIndex, foodItem);
-  }
-
-  // Update an existing food item in a specific week
-  updateFoodItemForWeek(
-    weekDate: Date,
-    dayIndex: number,
-    foodItem: FoodItem,
-  ): FoodItem {
-    const weekStartDate = startOfWeek(weekDate);
-    const weekKey = format(weekStartDate, 'yyyy-MM-dd');
-
-    if (!this.weeklyNutritionByDate.has(weekKey)) {
-      throw new Error(`No data found for week: ${weekKey}`);
-    }
-
-    const weekData = this.weeklyNutritionByDate.get(weekKey);
-
-    if (!weekData || dayIndex < 0 || dayIndex >= weekData.length) {
-      throw new Error(`Invalid day index: ${dayIndex} for week: ${weekKey}`);
-    }
-
-    const day = weekData[dayIndex];
-    const foodIndex = day.foodItems.findIndex(
-      (item) => item.id === foodItem.id,
-    );
-
-    if (foodIndex === -1) {
-      throw new Error(`Food item with ID ${foodItem.id} not found`);
-    }
-
-    // Remove old values from totals
-    const oldFoodItem = day.foodItems[foodIndex];
-    day.totalCalories -= oldFoodItem.calories;
-    day.totalProtein -= oldFoodItem.protein;
-    day.totalCarbs -= oldFoodItem.carbs;
-    day.totalFat -= oldFoodItem.fat;
-
-    // Add new values to totals
-    day.totalCalories += foodItem.calories;
-    day.totalProtein += foodItem.protein;
-    day.totalCarbs += foodItem.carbs;
-    day.totalFat += foodItem.fat;
-
-    // Update the food item
-    day.foodItems[foodIndex] = foodItem;
-
-    console.log(
-      `Updated food item ${foodItem.id} on day ${dayIndex} of week ${weekKey}`,
-    );
-
-    return foodItem;
-  }
-
-  // Move a food item between days
-  moveFoodBetweenDays(
-    sourceDayIndex: number,
-    targetDayIndex: number,
-    foodItemId: number,
-  ): boolean {
-    // Use current week
-    return this.moveFoodBetweenDaysForWeek(
-      new Date(),
-      sourceDayIndex,
-      targetDayIndex,
-      foodItemId,
-    );
-  }
-
-  // Move a food item between days in a specific week
-  moveFoodBetweenDaysForWeek(
-    weekDate: Date,
-    sourceDayIndex: number,
-    targetDayIndex: number,
-    foodItemId: number,
-  ): boolean {
-    const weekStartDate = startOfWeek(weekDate);
-    const weekKey = format(weekStartDate, 'yyyy-MM-dd');
-
-    if (!this.weeklyNutritionByDate.has(weekKey)) {
-      return false;
-    }
-
-    const weekData = this.weeklyNutritionByDate.get(weekKey);
-
-    if (
-      !weekData ||
-      sourceDayIndex < 0 ||
-      sourceDayIndex >= weekData.length ||
-      targetDayIndex < 0 ||
-      targetDayIndex >= weekData.length
-    ) {
-      return false;
-    }
-
-    const sourceDay = weekData[sourceDayIndex];
-    const foodIndex = sourceDay.foodItems.findIndex(
-      (item) => item.id === foodItemId,
-    );
-
-    if (foodIndex === -1) {
-      return false;
-    }
-
-    // Get the food item
-    const foodItem = { ...sourceDay.foodItems[foodIndex] };
-
-    // Remove from source day
-    this.removeFoodItemForWeek(weekDate, sourceDayIndex, foodItemId);
-
-    // Add to target day
-    this.addFoodItemForWeek(weekDate, targetDayIndex, foodItem);
-
-    console.log(
-      `Moved food item ${foodItemId} from day ${sourceDayIndex} to day ${targetDayIndex} of week ${weekKey}`,
-    );
-
-    return true;
-  }
-
-  // Search foods in the database
-  searchFoods(query: string): FoodItem[] {
-    if (!query || query.trim().length === 0) {
-      return this.foodDatabase.slice(0, 10); // Return first 10 items if no query
-    }
-
-    const normalizedQuery = query.toLowerCase().trim();
-    return this.foodDatabase.filter((food) =>
-      food.name.toLowerCase().includes(normalizedQuery),
-    );
-  }
-
-  // Get nutrition goals
-  getNutritionGoals(): NutritionGoals {
-    return this.nutritionGoals;
-  }
-
-  // Helper method to get random food items from the database
-  private getRandomFoodItems(count: number): FoodItem[] {
-    const items: FoodItem[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const randomIndex = Math.floor(Math.random() * this.foodDatabase.length);
-      const randomFood = this.foodDatabase[randomIndex];
-
-      // Create a copy and generate a unique ID
-      const foodCopy = {
-        ...randomFood,
-        id: Date.now() + i,
-        // Add some randomness to quantities for more realistic data
-        calories: Math.round(randomFood.calories * (0.8 + Math.random() * 0.4)),
-        protein:
-          Math.round(randomFood.protein * (0.8 + Math.random() * 0.4) * 10) /
-          10,
-        carbs:
-          Math.round(randomFood.carbs * (0.8 + Math.random() * 0.4) * 10) / 10,
-        fat: Math.round(randomFood.fat * (0.8 + Math.random() * 0.4) * 10) / 10,
-      };
-
-      items.push(foodCopy);
-    }
-
-    return items;
-  }
-
-  // Return all foods in the database
-  getAllFoods(): FoodItem[] {
-    return this.foodDatabase;
-  }
-
-  // Add a new food item to the database
-  addFoodToDatabase(newFood: FoodItem): FoodItem {
-    if (!newFood.id) {
-      const maxId = Math.max(...this.foodDatabase.map((f) => f.id || 0), 0);
-      newFood.id = maxId + 1;
-    }
-    this.foodDatabase.push(newFood);
-    return newFood;
-  }
-
-  // Update a food in the database
-  updateFoodInDatabase(id: number, updatedFood: FoodItem): FoodItem {
-    const index = this.foodDatabase.findIndex((f) => f.id === id);
-    if (index === -1) {
-      throw new Error(`Food with ID ${id} not found`);
-    }
-    updatedFood.id = id; // Ensure ID is preserved
-    this.foodDatabase[index] = updatedFood;
-    return updatedFood;
-  }
-
-  // Delete a food from the database
-  deleteFoodFromDatabase(id: number): void {
-    this.foodDatabase = this.foodDatabase.filter((f) => f.id !== id);
-  }
-
-  // Get nutrition for a specific day
-  getDailyNutrition(dayIndex: number): DailyNutrition {
-    const weekData = this.getWeeklyNutrition();
-    if (dayIndex < 0 || dayIndex >= weekData.length) {
-      throw new Error(`Invalid day index: ${dayIndex}`);
-    }
-    return weekData[dayIndex];
-  }
-
-  // Get nutrition for a specific date
-  getDailyNutritionByDate(date: Date): DailyNutrition {
-    const weekData = this.getWeeklyNutritionForDate(date);
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
-    return weekData[dayOfWeek];
-  }
-
-  // Update nutrition goals
-  updateNutritionGoals(goals: NutritionGoals): NutritionGoals {
-    this.nutritionGoals = goals;
-    return this.nutritionGoals;
   }
 }
